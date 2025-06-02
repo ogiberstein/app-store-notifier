@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation'; // Hook to get URL search params
-import Link from 'next/link'; // Import Link
+import React, { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
-export default function UnsubscribePage() {
+// This component contains the actual logic and UI that uses useSearchParams
+function UnsubscribeView() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
   const [message, setMessage] = useState('Processing your unsubscribe request...');
@@ -39,7 +40,7 @@ export default function UnsubscribePage() {
       setMessage('No email address provided for unsubscribe.');
       setIsLoading(false);
     }
-  }, [email]); // Effect runs when email query param changes
+  }, [email]);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 text-center">
@@ -66,5 +67,14 @@ export default function UnsubscribePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// The default export is the page, which now wraps UnsubscribeView in Suspense
+export default function UnsubscribePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center"><p className="text-lg text-gray-700">Loading page...</p></div>}>
+      <UnsubscribeView />
+    </Suspense>
   );
 } 
