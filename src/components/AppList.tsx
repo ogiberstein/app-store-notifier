@@ -18,7 +18,6 @@ const popularApps: AppItem[] = [
 ];
 
 interface AppListProps {
-  // eslint-disable-next-line no-unused-vars
   onChange: (selectedAppIds: string[]) => void;
   initialSelectedApps?: string[];
 }
