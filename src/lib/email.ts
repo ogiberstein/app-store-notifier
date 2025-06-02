@@ -1,6 +1,6 @@
-// import { Resend } from 'resend'; // Example import for Resend
+import { Resend } from 'resend';
 
-// const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);
 const emailFromAddress = process.env.EMAIL_FROM_ADDRESS;
 
 interface EmailParams {
@@ -26,52 +26,41 @@ export async function sendEmail({
   htmlBody,
 }: EmailParams): Promise<void> {
   if (!process.env.RESEND_API_KEY) {
-    console.warn(
-      'RESEND_API_KEY not found in .env.local. Email sending is mocked.'
-    );
+    console.error('RESEND_API_KEY not found. Cannot send emails.');
+    // Optionally, throw an error or return early if preferred
+    // For now, we'll log and attempt to proceed, which will likely fail at resend.emails.send()
+    // but this makes the error more explicit if the key is missing.
+    throw new Error('RESEND_API_KEY is not configured.');
   }
   if (!emailFromAddress) {
-    console.warn(
-      'EMAIL_FROM_ADDRESS not found in .env.local. Email sending is mocked.'
-    );
+    console.error('EMAIL_FROM_ADDRESS not found. Cannot send emails.');
+    throw new Error('EMAIL_FROM_ADDRESS is not configured.');
   }
 
-  console.log('---- Sending Email (Mock) ----');
-  console.log(`To: ${to}`);
-  console.log(`From: ${emailFromAddress || 'fallback@example.com'}`); // Fallback for mock
-  console.log(`Subject: ${subject}`);
-  console.log(`HTML Body: ${htmlBody.substring(0, 200)}...`); // Log a snippet
-  console.log('-------------------------------');
+  try {
+    console.log(`Attempting to send email to: ${to} from: ${emailFromAddress}`);
+    const { data, error } = await resend.emails.send({
+      from: emailFromAddress, // Your verified Resend 'From' address
+      to: [to], // Must be an array
+      subject: subject,
+      html: htmlBody,
+    });
 
-  // // Example using Resend (uncomment and configure when ready)
-  // try {
-  //   if (!emailFromAddress) {
-  //     throw new Error('EMAIL_FROM_ADDRESS is not configured in .env.local');
-  //   }
-  //   const { data, error } = await resend.emails.send({
-  //     from: emailFromAddress, // e.g., 'App Store Notifier <onboarding@resend.dev>'
-  //     to: [to],
-  //     subject: subject,
-  //     html: htmlBody,
-  //   });
+    if (error) {
+      console.error(`Error sending email to ${to} via Resend:`, error);
+      // Log the full error object for more details if possible
+      console.error('Resend error details:', JSON.stringify(error, null, 2));
+      throw new Error(`Failed to send email via Resend: ${error.message}`);
+    }
 
-  //   if (error) {
-  //     console.error('Error sending email via Resend:', error);
-  //     throw error; // Re-throw to be caught by caller if needed
-  //   }
-
-  //   console.log('Email sent successfully via Resend:', data);
-  //   return;
-  // } catch (error) {
-  //   console.error('Failed to send email:', error);
-  //   // Fallback or re-throw, depending on desired error handling
-  //   // For now, if RESEND_API_KEY is set, we re-throw to indicate a real problem.
-  //   if (process.env.RESEND_API_KEY) {
-  //       throw error;
-  //   }
-  //   // If no API key, we assume mock mode was intended, so just log and continue.
-  // }
-  
-  // Simulate a short delay for mock sending
-  await new Promise(resolve => setTimeout(resolve, 300)); 
+    console.log(`Email sent successfully to ${to} via Resend. ID: ${data?.id}`);
+  } catch (error: any) {
+    console.error(`General error when trying to send email to ${to}:`, error);
+    // Log additional details if it's a Resend-specific error structure not caught above
+    if (error.response && error.response.data) {
+      console.error('Catch block error details:', JSON.stringify(error.response.data, null, 2));
+    }
+    // Re-throw the error so the caller (e.g., the cron job) knows it failed.
+    throw new Error(`Failed to send email: ${error.message}`);
+  }
 } 
