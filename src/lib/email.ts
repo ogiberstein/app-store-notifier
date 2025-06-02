@@ -54,13 +54,23 @@ export async function sendEmail({
     }
 
     console.log(`Email sent successfully to ${to} via Resend. ID: ${data?.id}`);
-  } catch (error: any) {
-    console.error(`General error when trying to send email to ${to}:`, error);
-    // Log additional details if it's a Resend-specific error structure not caught above
-    if (error.response && error.response.data) {
-      console.error('Catch block error details:', JSON.stringify(error.response.data, null, 2));
+  } catch (e: unknown) {
+    let errorMessage = 'An unknown error occurred while sending email';
+    if (e instanceof Error) {
+      errorMessage = e.message;
     }
-    // Re-throw the error so the caller (e.g., the cron job) knows it failed.
-    throw new Error(`Failed to send email: ${error.message}`);
+    console.error(`General error when trying to send email to ${to}:`, e);
+
+    // Attempt to log more specific details if available (e.g., from an HTTP error object)
+    if (typeof e === 'object' && e !== null) {
+      if ('response' in e && typeof (e as any).response === 'object' && (e as any).response !== null && 'data' in (e as any).response) {
+        console.error('Catch block error details (response.data):', JSON.stringify((e as any).response.data, null, 2));
+      } else if ('data' in e) {
+        // For errors that might have a 'data' property directly (like ResendError.ValidationErorr)
+         console.error('Catch block error details (data):', JSON.stringify((e as any).data, null, 2));
+      }
+    }
+    // Re-throw a new error with a potentially more specific message
+    throw new Error(`Failed to send email: ${errorMessage}`);
   }
 } 
