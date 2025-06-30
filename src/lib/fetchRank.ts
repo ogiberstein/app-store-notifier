@@ -6,7 +6,7 @@ interface AppRank {
 }
 
 /**
- * Fetches the top charts for a given category from the App Store using SerpApi.
+ * Fetches the top charts for the Finance category from the App Store using SerpApi.
  * @returns A promise that resolves to a Map where the key is the app's numeric ID and the value is its rank.
  */
 export async function fetchFinanceChartRanks(): Promise<Map<string, number>> {
@@ -21,27 +21,33 @@ export async function fetchFinanceChartRanks(): Promise<Map<string, number>> {
     const response = await getJson({
       api_key: process.env.SERPAPI_API_KEY,
       engine: 'apple_app_store',
-      term: 'finance',
+      term: 'finance', // Generic term is required, but chart/category take precedence
       chart: 'top_free_applications',
       category: '6015', // Finance category ID
       country: 'us',
     });
 
     const ranks = new Map<string, number>();
-    const chartResults = response.organic_results?.results || [];
+    const chartResults = response.organic_results || [];
 
-    chartResults.forEach((app: AppRank) => {
-      if (app.id) {
-        ranks.set(app.id, app.rank);
+    chartResults.forEach((app: any) => {
+      // The numeric ID is in the `app_id` field, prefixed with 'id'
+      const numericId = app.app_id?.replace('id', '');
+      if (numericId && app.rank) {
+        ranks.set(numericId, app.rank);
       }
     });
 
-    console.log(`Successfully fetched and mapped ${ranks.size} apps from the chart.`);
+    if (ranks.size === 0) {
+      console.warn('Could not parse any ranks from SerpApi response. Full response:', JSON.stringify(response));
+    } else {
+      console.log(`Successfully fetched and mapped ${ranks.size} apps from the chart.`);
+    }
+    
     return ranks;
 
   } catch (error) {
     console.error('Error fetching chart from SerpApi:', error);
-    // Return an empty map on error to prevent the whole job from failing.
     return new Map<string, number>();
   }
 }
@@ -82,7 +88,7 @@ export async function fetchRank(appNumericId: string): Promise<number> {
   }
 }
 
-// This function is no longer needed but is kept to avoid breaking imports. It does nothing.
+// This function is no longer needed but is kept to avoid breaking imports.
 export async function closeBrowser() {
   console.log('closeBrowser() is a no-op as Playwright is no longer used.');
 }

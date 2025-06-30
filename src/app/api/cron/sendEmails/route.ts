@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { fetchRank } from '@/lib/fetchRank';
+import { fetchFinanceChartRanks } from '@/lib/fetchRank';
 import { sendEmail } from '@/lib/email';
 
 // Helper to map app bundle IDs to their details.
@@ -21,31 +21,14 @@ export async function GET() {
   let errorsEncountered = 0;
 
   try {
-    // 1. Get all unique apps that are subscribed to, across all users.
-    const { data: allSubscriptions, error: allSubscriptionsError } = await supabase
-      .from('subscriptions')
-      .select('app_id');
-
-    if (allSubscriptionsError) {
-      throw new Error(`Failed to fetch subscriptions: ${allSubscriptionsError.message}`);
+    // 1. Fetch all app ranks for the Finance category once.
+    const chartRanks = await fetchFinanceChartRanks();
+    if (chartRanks.size === 0) {
+      console.warn('Could not fetch chart ranks. Aborting cron job for now.');
+      return NextResponse.json({ message: 'Failed to fetch chart ranks' }, { status: 500 });
     }
 
-    const allAppIds = allSubscriptions.map(sub => sub.app_id);
-    const uniqueAppIdsToFetch = [...new Set(allAppIds)];
-    
-    // 2. Fetch the rank for each unique app once.
-    const appRanks = new Map<string, string>();
-    for (const appId of uniqueAppIdsToFetch) {
-      if (!appId) continue;
-      const { numericId } = await getAppDetails(appId);
-      if (!numericId) continue;
-
-      const rank = await fetchRank(numericId);
-      const rankText = rank > 0 ? `#${rank}` : 'Not Ranked';
-      appRanks.set(appId, rankText);
-    }
-    
-    // 3. Fetch all distinct emails from the database.
+    // 2. Fetch all distinct emails from the database.
     const { data: distinctEmails, error: subscriptionsError } = await supabase
       .from('distinct_emails')
       .select('email');
@@ -65,7 +48,7 @@ export async function GET() {
 
     console.log(`Found ${distinctEmails.length} distinct email(s) to process.`);
 
-    // 4. Process each email.
+    // 3. Process each email.
     for (const { email } of distinctEmails) {
       if (!email) continue;
 
@@ -89,12 +72,13 @@ export async function GET() {
       const uniqueAppIdsForUser = [...new Set(userSubscriptions.map(sub => sub.app_id))];
       const appDetailsForEmail: { name: string; rank: string }[] = [];
 
-      // 5. Look up rank for each unique subscribed app for the current user.
+      // 4. Look up rank for each unique subscribed app for the current user.
       for (const appId of uniqueAppIdsForUser) {
         if (!appId) continue;
-        const { name } = await getAppDetails(appId);
-        const rank = appRanks.get(appId) || 'Not Ranked'; // Look up from our pre-fetched map.
-        appDetailsForEmail.push({ name, rank });
+        const { name, numericId } = await getAppDetails(appId);
+        const rank = chartRanks.get(numericId); // Look up from our pre-fetched map.
+        const rankText = rank ? `#${rank}` : 'Not Ranked';
+        appDetailsForEmail.push({ name, rank: rankText });
       }
       
       if (appDetailsForEmail.length === 0) {
@@ -102,7 +86,7 @@ export async function GET() {
         continue;
       }
       
-      // 6. Compile and send the email.
+      // 5. Compile and send the email.
       let emailSubject = '📈 Your Daily App Rank Update';
       if (appDetailsForEmail.length === 1) {
         const singleApp = appDetailsForEmail[0];
