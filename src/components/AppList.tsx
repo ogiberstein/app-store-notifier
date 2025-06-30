@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 
-interface AppItem {
+export interface AppItem {
   id: string;
   name: string;
 }
@@ -16,18 +16,20 @@ const popularApps: AppItem[] = [
 ];
 
 interface AppListProps {
-  onChange: (selectedAppIds: string[]) => void;
+  onChange: (selectedApps: AppItem[]) => void;
   initialSelectedApps?: string[];
 }
 
 const AppList: React.FC<AppListProps> = ({ onChange, initialSelectedApps = [] }) => {
   const [selectedApps, setSelectedApps] = useState<string[]>(initialSelectedApps);
 
-  const handleCheckboxChange = (appId: string) => {
-    const newSelectedApps = selectedApps.includes(appId)
-      ? selectedApps.filter(id => id !== appId)
-      : [...selectedApps, appId];
-    setSelectedApps(newSelectedApps);
+  const handleCheckboxChange = (app: AppItem) => {
+    const newSelectedIds = selectedApps.includes(app.id)
+      ? selectedApps.filter(id => id !== app.id)
+      : [...selectedApps, app.id];
+    setSelectedApps(newSelectedIds);
+
+    const newSelectedApps = popularApps.filter(pApp => newSelectedIds.includes(pApp.id));
     onChange(newSelectedApps);
   };
 
@@ -41,7 +43,7 @@ const AppList: React.FC<AppListProps> = ({ onChange, initialSelectedApps = [] })
             name={`app-${app.id}`}
             type="checkbox"
             checked={selectedApps.includes(app.id)}
-            onChange={() => handleCheckboxChange(app.id)}
+            onChange={() => handleCheckboxChange(app)}
             className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
           />
           <label htmlFor={`app-${app.id}`} className="ml-2 block text-sm text-gray-700">

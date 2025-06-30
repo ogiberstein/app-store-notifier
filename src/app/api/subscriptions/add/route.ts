@@ -4,15 +4,15 @@ import { supabase } from '@/lib/supabase';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, appId } = body;
+    const { email, appId, appName } = body;
 
-    if (!email || !appId) {
-      return NextResponse.json({ error: 'Email and appId are required' }, { status: 400 });
+    if (!email || !appId || !appName) {
+      return NextResponse.json({ error: 'Email, appId, and appName are required' }, { status: 400 });
     }
 
     const { data, error } = await supabase
       .from('subscriptions')
-      .insert([{ email, app_id: appId }])
+      .insert([{ email, app_id: appId, app_name: appName }])
       .select(); // Add .select() to get the inserted data back
 
     if (error) {

@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import AppList from '@/components/AppList'; // Assuming alias '@/' is configured for src
+import AppList, { AppItem } from '@/components/AppList'; // Assuming alias '@/' is configured for src
 
 export default function HomePage() {
   const [email, setEmail] = useState('');
-  const [selectedAppIds, setSelectedAppIds] = useState<string[]>([]);
+  const [selectedApps, setSelectedApps] = useState<AppItem[]>([]);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const [isUnsubscribing, setIsUnsubscribing] = useState(false);
@@ -15,8 +15,8 @@ export default function HomePage() {
     setEmail(event.target.value);
   };
 
-  const handleAppSelectionChange = (newSelectedAppIds: string[]) => {
-    setSelectedAppIds(newSelectedAppIds);
+  const handleAppSelectionChange = (newSelectedApps: AppItem[]) => {
+    setSelectedApps(newSelectedApps);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -28,33 +28,33 @@ export default function HomePage() {
       setSubmitMessage('Please enter your email address.');
       return;
     }
-    if (selectedAppIds.length === 0) {
+    if (selectedApps.length === 0) {
       setSubmitMessage('Please select at least one app to monitor.');
       return;
     }
 
     setIsSubscribing(true);
     let successCount = 0;
-    const totalApps = selectedAppIds.length;
+    const totalApps = selectedApps.length;
 
-    for (const appId of selectedAppIds) {
+    for (const app of selectedApps) {
       try {
         const response = await fetch('/api/subscriptions/add', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ email, appId }),
+          body: JSON.stringify({ email, appId: app.id, appName: app.name }),
         });
         const result = await response.json();
         if (response.ok) {
-          console.log(`Successfully subscribed to ${appId} for ${email}:`, result.message);
+          console.log(`Successfully subscribed to ${app.name} for ${email}:`, result.message);
           successCount++;
         } else {
-          console.error(`Failed to subscribe to ${appId} for ${email}:`, result.error);
+          console.error(`Failed to subscribe to ${app.name} for ${email}:`, result.error);
         }
       } catch (error) {
-        console.error(`Error subscribing to ${appId} for ${email}:`, error);
+        console.error(`Error subscribing to ${app.name} for ${email}:`, error);
       }
     }
 
@@ -89,7 +89,7 @@ export default function HomePage() {
       if (response.ok) {
         setUnsubscribeMessage(result.message || 'Successfully unsubscribed from all apps for this email.');
         // Optionally clear selected apps if the user unsubscribes
-        // setSelectedAppIds([]); 
+        // setSelectedApps([]); 
       } else {
         setUnsubscribeMessage(result.error || 'Failed to unsubscribe. Please try again.');
       }
@@ -134,7 +134,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <AppList onChange={handleAppSelectionChange} initialSelectedApps={selectedAppIds} />
+            <AppList onChange={handleAppSelectionChange} initialSelectedApps={selectedApps.map(app => app.id)} />
 
             {submitMessage && (
               <p className={`text-sm ${submitMessage.includes('Successfully') ? 'text-green-600' : 'text-red-600'}`}>
