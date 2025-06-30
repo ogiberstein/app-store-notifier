@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { fetchFinanceChartRanks } from '@/lib/fetchRank';
-import { sendEmail } from '@/lib/email';
+import { supabase } from '../../../../lib/supabase';
+import { fetchFinanceChartRanks } from '../../../../lib/fetchRank';
+import { sendEmail } from '../../../../lib/email';
 
 // Helper to map app bundle IDs to their details.
 async function getAppDetails(appId: string): Promise<{ name: string; numericId: string }> {
@@ -117,7 +117,7 @@ export async function GET() {
     return NextResponse.json({ message: summaryMessage }, { status: 200 });
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Unhandled error in sendEmails cron job:', errorMessage);
     return NextResponse.json(
       { message: 'Cron job failed', error: errorMessage },

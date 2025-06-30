@@ -15,9 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "App Store Notifier",
   description: "Get daily email updates for your favorite app store rankings.",
-  icons: {
-    icon: "/notification-icon.png",
-  },
 };
 
 export default function RootLayout({
@@ -34,4 +31,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+} 
