@@ -2,7 +2,7 @@ import { getJson } from "serpapi";
 
 /**
  * Fetches the top charts for the Finance category from the App Store using SerpApi.
- * @returns A promise that resolves to a Map where the key is the app's numeric ID and the value is its rank.
+ * @returns A promise that resolves to a Map where the key is the app's bundle ID and the value is its rank.
  */
 export async function fetchFinanceChartRanks(): Promise<Map<string, number>> {
   console.log("Fetching Top Free Finance chart from SerpApi...");
@@ -25,14 +25,11 @@ export async function fetchFinanceChartRanks(): Promise<Map<string, number>> {
     const ranks = new Map<string, number>();
     const chartResults = response.organic_results || [];
 
-    // Temporary logging to inspect the full API response
-    console.log("Full SerpApi organic_results:", JSON.stringify(chartResults, null, 2));
-
     chartResults.forEach((app: any) => {
-      const numericId = app.id;
+      const bundleId = app.bundle_id;
       const rank = app.position;
-      if (numericId && rank) {
-        ranks.set(String(numericId), rank);
+      if (bundleId && rank) {
+        ranks.set(bundleId, rank);
       }
     });
 

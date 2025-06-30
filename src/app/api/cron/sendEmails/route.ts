@@ -5,18 +5,6 @@ import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic'; // Prevent caching
 
-// Helper to map app bundle IDs to their details.
-async function getAppDetails(appId: string): Promise<{ name: string; numericId: string }> {
-  // This map links the internal bundle IDs to the public App Store numeric IDs and a user-friendly name.
-  const appDetailsMap: Record<string, { name: string; numericId: string }> = {
-    'com.coinbase.android': { name: 'Coinbase', numericId: '886427730' },
-    'app.phantom': { name: 'Phantom Wallet', numericId: '1598432977' },
-    'co.mona.android': { name: 'Crypto.com', numericId: '1262148500' },
-    'com.kraken.invest': { name: 'Kraken', numericId: '1481947260' },
-  };
-  return appDetailsMap[appId] || { name: appId, numericId: '' }; // Fallback for safety
-}
-
 export async function GET() {
   console.log('Cron job sendEmails started...');
   let emailsSentCount = 0;
@@ -33,7 +21,7 @@ export async function GET() {
     // 2. Fetch all subscriptions from the database in a single query.
     const { data: allSubscriptions, error: subscriptionsError } = await supabase
       .from('subscriptions')
-      .select('email, app_id');
+      .select('email, app_id, app_name'); // Also fetch the app_name
 
     if (subscriptionsError) {
       console.error('Error fetching subscriptions:', subscriptionsError);
@@ -49,13 +37,13 @@ export async function GET() {
     }
 
     // 3. Group subscriptions by email to avoid N+1 queries.
-    const subscriptionsByEmail: { [email: string]: string[] } = {};
+    const subscriptionsByEmail: { [email: string]: { appId: string; appName: string }[] } = {};
     for (const subscription of allSubscriptions) {
-      if (subscription.email && subscription.app_id) {
+      if (subscription.email && subscription.app_id && subscription.app_name) {
         if (!subscriptionsByEmail[subscription.email]) {
           subscriptionsByEmail[subscription.email] = [];
         }
-        subscriptionsByEmail[subscription.email].push(subscription.app_id);
+        subscriptionsByEmail[subscription.email].push({ appId: subscription.app_id, appName: subscription.app_name });
       }
     }
 
@@ -64,18 +52,15 @@ export async function GET() {
     // 4. Process each email.
     for (const email in subscriptionsByEmail) {
       console.log(`Processing email: ${email}`);
-      const userAppIds = subscriptionsByEmail[email];
+      const userSubscriptions = subscriptionsByEmail[email];
       
-      const uniqueAppIdsForUser = Array.from(new Set(userAppIds));
       const appDetailsForEmail: { name: string; rank: string }[] = [];
 
       // 5. Look up rank for each unique subscribed app for the current user.
-      for (const appId of uniqueAppIdsForUser) {
-        if (!appId) continue;
-        const { name, numericId } = await getAppDetails(appId);
-        const rank = chartRanks.get(numericId); // Look up from our pre-fetched map.
+      for (const { appId, appName } of userSubscriptions) {
+        const rank = chartRanks.get(appId); // Look up by bundle_id
         const rankText = rank ? `#${rank}` : 'Not Ranked';
-        appDetailsForEmail.push({ name, rank: rankText });
+        appDetailsForEmail.push({ name: appName, rank: rankText });
       }
       
       if (appDetailsForEmail.length === 0) {
