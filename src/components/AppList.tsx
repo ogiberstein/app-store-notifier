@@ -9,9 +9,9 @@ export interface AppItem {
 
 // Hardcoded list of popular apps
 const popularApps: AppItem[] = [
-  { id: 'com.coinbase.android', name: 'Coinbase' }, // Placeholder ID, .android is common
-  { id: 'co.mona.android', name: 'Crypto.com - Buy Bitcoin, ETH' }, // Placeholder ID for Crypto.com
-  { id: 'com.kraken.invest', name: 'Kraken - Buy & Sell Crypto' }, // Placeholder ID
+  { id: 'com.coinbase.wallet', name: 'Coinbase' },
+  { id: 'com.crypto.bento', name: 'Crypto.com - Buy Bitcoin, ETH' },
+  { id: 'com.kraken.trade', name: 'Kraken - Buy & Sell Crypto' },
   // { id: 'com.whatsapp', name: 'WhatsApp Messenger' }, // Kept one old one for 5 total if needed, or remove
 ];
 
