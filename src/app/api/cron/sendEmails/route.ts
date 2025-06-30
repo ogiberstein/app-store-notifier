@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { fetchFinanceChartRanks } from '@/lib/fetchRank';
 import { sendEmail } from '@/lib/email';
 
+export const dynamic = 'force-dynamic'; // Prevent caching
+
 // Helper to map app bundle IDs to their details.
 async function getAppDetails(appId: string): Promise<{ name: string; numericId: string }> {
   // This map links the internal bundle IDs to the public App Store numeric IDs and a user-friendly name.
