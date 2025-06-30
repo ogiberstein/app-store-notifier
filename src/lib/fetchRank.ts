@@ -16,6 +16,7 @@ export async function fetchFinanceChartRanks(): Promise<Map<string, number>> {
     const response = await getJson({
       api_key: process.env.SERPAPI_API_KEY,
       engine: "apple_app_store",
+      term: "finance",
       category_id: "6015", // Finance category ID
       country: "us",
       num: "200", // Fetch top 200 free apps
