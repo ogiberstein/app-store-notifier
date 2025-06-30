@@ -32,10 +32,16 @@ export async function sendEmail({
   htmlBody,
 }: EmailParams) {
   const resendClient = getResendClient(); // Get the client on-demand
+  const fromEmail = process.env.EMAIL_FROM_ADDRESS;
+  if (!fromEmail) {
+    const errorMessage = 'EMAIL_FROM_ADDRESS is not set in environment variables. Please set it in your Vercel project settings.';
+    console.error(errorMessage);
+    throw new Error(errorMessage);
+  }
 
   try {
     const { data, error } = await resendClient.emails.send({
-      from: 'App Store Notifier <noreply@appstorereposition.com>',
+      from: fromEmail,
       to,
       subject,
       html: htmlBody,
