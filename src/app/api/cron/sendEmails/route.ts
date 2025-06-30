@@ -37,7 +37,7 @@ export async function GET() {
     const appRanks = new Map<string, string>();
     for (const appId of uniqueAppIdsToFetch) {
       if (!appId) continue;
-      const { name, numericId } = await getAppDetails(appId);
+      const { numericId } = await getAppDetails(appId);
       if (!numericId) continue;
 
       const rank = await fetchRank(numericId);
