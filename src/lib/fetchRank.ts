@@ -25,6 +25,9 @@ export async function fetchFinanceChartRanks(): Promise<Map<string, number>> {
     const ranks = new Map<string, number>();
     const chartResults = response.organic_results || [];
 
+    // Temporary logging to inspect the full API response
+    console.log("Full SerpApi organic_results:", JSON.stringify(chartResults, null, 2));
+
     chartResults.forEach((app: any) => {
       const numericId = app.id;
       const rank = app.position;
