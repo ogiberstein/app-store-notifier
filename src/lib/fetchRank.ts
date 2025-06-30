@@ -1,9 +1,9 @@
 import { chromium } from 'playwright-extra';
-import stealthPlugin from 'puppeteer-extra-plugin-stealth';
-import * as fs from 'fs';
+import stealth from 'puppeteer-extra-plugin-stealth';
 
-// Apply the stealth plugin each time
-chromium.use(stealthPlugin());
+chromium.use(stealth());
+
+const DEBUG = process.env.NODE_ENV !== 'production';
 
 /**
  * Fetches the current App Store category rank for a given app ID.

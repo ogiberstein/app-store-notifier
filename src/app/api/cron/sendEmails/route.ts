@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { fetchRank, closeBrowser } from '@/lib/fetchRank';
+import { fetchRank } from '@/lib/fetchRank';
 import { sendEmail } from '@/lib/email';
 
 // Helper to map app IDs to their details. In a real-world scenario, this would likely be a database table.
@@ -106,7 +106,6 @@ export async function GET() {
 
       const appUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
       const unsubscribeLink = `${appUrl}/unsubscribe?email=${encodeURIComponent(email)}`;
-      const donationLink = 'https://www.buymeacoffee.com/your-username'; // Replace with your actual link
 
       emailHtmlBody += `
         <br><hr>
