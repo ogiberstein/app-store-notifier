@@ -1,8 +1,9 @@
 import { getJson } from 'serpapi';
 
-interface AppRank {
+// Define a type for the objects we expect in the SerpApi response
+interface SerpApiAppResult {
+  app_id: string;
   rank: number;
-  id: string;
 }
 
 /**
@@ -30,7 +31,7 @@ export async function fetchFinanceChartRanks(): Promise<Map<string, number>> {
     const ranks = new Map<string, number>();
     const chartResults = response.organic_results || [];
 
-    chartResults.forEach((app: any) => {
+    chartResults.forEach((app: SerpApiAppResult) => {
       // The numeric ID is in the `app_id` field, prefixed with 'id'
       const numericId = app.app_id?.replace('id', '');
       if (numericId && app.rank) {
