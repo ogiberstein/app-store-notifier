@@ -3,8 +3,6 @@ import stealth from 'puppeteer-extra-plugin-stealth';
 
 chromium.use(stealth());
 
-const DEBUG = process.env.NODE_ENV !== 'production';
-
 /**
  * Fetches the current App Store category rank for a given app ID.
  * This function is designed to be stateless for serverless environments.
