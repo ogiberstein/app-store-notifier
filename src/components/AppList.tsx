@@ -9,9 +9,9 @@ export interface AppItem {
 
 // Hardcoded list of popular apps
 const popularApps: AppItem[] = [
-  { id: 'com.coinbase.wallet', name: 'Coinbase' },
-  { id: 'com.crypto.bento', name: 'Crypto.com - Buy Bitcoin, ETH' },
-  { id: 'com.kraken.trade', name: 'Kraken - Buy & Sell Crypto' },
+  { id: 'com.vilcsak.bitcoin2', name: 'Coinbase' },
+  { id: 'co.mona.Monaco', name: 'Crypto.com - Buy Bitcoin, ETH' },
+  { id: 'com.kraken.invest.app', name: 'Kraken - Buy & Sell Crypto' },
   // { id: 'com.whatsapp', name: 'WhatsApp Messenger' }, // Kept one old one for 5 total if needed, or remove
 ];
 
