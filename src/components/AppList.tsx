@@ -11,7 +11,7 @@ export interface AppItem {
 const popularApps: AppItem[] = [
   { id: 'com.vilcsak.bitcoin2', name: 'Coinbase' },
   { id: 'co.mona.Monaco', name: 'Crypto.com - Buy Bitcoin, ETH' },
-  { id: 'com.kraken.invest.app', name: 'Kraken - Buy & Sell Crypto' },
+  { id: 'com.kraken.invest.app', name: 'Kraken: Buy Stocks & Crypto' },
   // { id: 'com.whatsapp', name: 'WhatsApp Messenger' }, // Kept one old one for 5 total if needed, or remove
 ];
 
