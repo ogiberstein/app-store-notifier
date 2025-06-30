@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "App Store Notifier",
   description: "Get daily email updates for your favorite app store rankings.",
   icons: {
-    icon: "/globe.svg",
+    icon: "/notification.png",
   },
 };
 
