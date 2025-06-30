@@ -20,15 +20,14 @@ export async function fetchFinanceChartRanks(): Promise<Map<string, number>> {
   try {
     const response = await getJson({
       api_key: process.env.SERPAPI_API_KEY,
-      engine: 'apple_app_store',
-      term: 'finance',
+      engine: 'apple_app_store_charts',
       chart: 'top_free_applications',
       category: '6015', // Finance category ID
       country: 'us',
     });
 
     const ranks = new Map<string, number>();
-    const chartResults = response.organic_results?.results || [];
+    const chartResults = response.charts?.free_applications?.results || [];
 
     chartResults.forEach((app: AppRank) => {
       if (app.id) {
@@ -47,39 +46,13 @@ export async function fetchFinanceChartRanks(): Promise<Map<string, number>> {
 }
 
 /**
- * Fetches the current App Store category rank for a given app ID using the SerpApi Apple App Store API.
- * This function is designed for serverless environments.
- * @param appNumericId The numeric App Store ID of the app.
- * @returns A promise that resolves to the app's category rank, or -1 if not found.
+ * @deprecated This function is inefficient. Use fetchFinanceChartRanks instead.
  */
 export async function fetchRank(appNumericId: string): Promise<number> {
-  console.log(`Fetching rank for app ID: ${appNumericId} using SerpApi`);
-
-  if (!process.env.SERPAPI_API_KEY) {
-    console.error('SERPAPI_API_KEY is not set in environment variables.');
-    throw new Error('Server configuration error: SERPAPI_API_KEY is missing.');
-  }
-
-  try {
-    const response = await getJson({
-      api_key: process.env.SERPAPI_API_KEY,
-      engine: 'apple_app_store',
-      term: `id${appNumericId}`,
-    });
-
-    const rank = response.organic_results[0]?.rank;
-
-    if (rank) {
-      console.log(`Successfully fetched rank for ${appNumericId}: #${rank}`);
-      return rank;
-    } else {
-      console.warn(`Could not find rank for ${appNumericId} in SerpApi response.`);
-      return -1;
-    }
-  } catch (error) {
-    console.error(`Error fetching rank for ${appNumericId} from SerpApi:`, error);
-    return -1;
-  }
+  // This function remains to prevent build errors if it's imported elsewhere,
+  // but it should not be used in the new cron job logic.
+  console.warn(`DEPRECATED: fetchRank called for ${appNumericId}. Switch to chart-based fetching.`);
+  return -1;
 }
 
 // This function is no longer needed but is kept to avoid breaking imports. It does nothing.
