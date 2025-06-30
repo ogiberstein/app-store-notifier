@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { fetchRank } from '@/lib/fetchRank';
+import { fetchFinanceChartRanks } from '@/lib/fetchRank';
 import { sendEmail } from '@/lib/email';
 
-// Helper to map app IDs to their details. In a real-world scenario, this would likely be a database table.
+// Helper to map app bundle IDs to their details.
 async function getAppDetails(appId: string): Promise<{ name: string; numericId: string }> {
   // This map links the internal bundle IDs to the public App Store numeric IDs and a user-friendly name.
   const appDetailsMap: Record<string, { name: string; numericId: string }> = {
@@ -21,7 +21,14 @@ export async function GET() {
   let errorsEncountered = 0;
 
   try {
-    // 1. Fetch all distinct emails directly from the database
+    // 1. Fetch all app ranks for the Finance category once.
+    const chartRanks = await fetchFinanceChartRanks();
+    if (chartRanks.size === 0) {
+      console.warn('Could not fetch chart ranks. Aborting cron job.');
+      return NextResponse.json({ message: 'Failed to fetch chart ranks' }, { status: 500 });
+    }
+
+    // 2. Fetch all distinct emails from the database.
     const { data: distinctEmails, error: subscriptionsError } = await supabase
       .from('distinct_emails')
       .select('email');
@@ -41,7 +48,7 @@ export async function GET() {
 
     console.log(`Found ${distinctEmails.length} distinct email(s) to process.`);
 
-    // 2. Process each email
+    // 3. Process each email.
     for (const { email } of distinctEmails) {
       if (!email) continue;
 
@@ -61,29 +68,24 @@ export async function GET() {
         console.log(`No subscriptions found for ${email}, skipping.`);
         continue;
       }
-
+      
+      // FIX: Process unique app_ids to prevent duplicate entries in the email.
+      const uniqueAppIds = [...new Set(userSubscriptions.map(sub => sub.app_id))];
       const appDetailsForEmail: { name: string; rank: string }[] = [];
 
-      // 3. Fetch rank for each subscribed app
-      for (const sub of userSubscriptions) {
-        const appId = sub.app_id;
+      // 4. Look up rank for each unique subscribed app.
+      for (const appId of uniqueAppIds) {
         if (!appId) continue;
 
         try {
           const { name, numericId } = await getAppDetails(appId);
-          if (!numericId) {
-            console.warn(`No numeric ID found for app_id: ${appId}. Skipping.`);
-            continue;
-          }
-          
-          const rank = await fetchRank(numericId);
-          const rankText = rank > 0 ? `#${rank}` : 'Not Ranked';
+          const rank = chartRanks.get(numericId); // Look up the rank from the fetched chart.
+          const rankText = rank ? `#${rank}` : 'Not Ranked';
           appDetailsForEmail.push({ name, rank: rankText });
 
-        } catch (rankError) {
-          console.error(`Error fetching rank for ${appId} (email: ${email}):`, rankError);
-          const { name } = await getAppDetails(appId); // Get name for error message
-          appDetailsForEmail.push({ name, rank: 'Error fetching rank' });
+        } catch (lookupError) {
+          console.error(`Error looking up details for ${appId} (email: ${email}):`, lookupError);
+          // Don't add to email if there's a local error.
         }
       }
       
@@ -92,10 +94,11 @@ export async function GET() {
         continue;
       }
       
-      // 4. Compile and send the email
+      // 5. Compile and send the email.
       let emailSubject = '📈 Your Daily App Rank Update';
       if (appDetailsForEmail.length === 1) {
-        emailSubject = `📈 ${appDetailsForEmail[0].name} is ${appDetailsForEmail[0].rank}`;
+        const singleApp = appDetailsForEmail[0];
+        emailSubject = `📈 ${singleApp.name} is ${singleApp.rank} in Finance (US)`;
       }
 
       let emailHtmlBody = '<h1>Your Daily App Rank Update</h1><ul>';
@@ -104,28 +107,8 @@ export async function GET() {
       });
       emailHtmlBody += '</ul>';
 
-      const appUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-      const unsubscribeLink = `${appUrl}/unsubscribe?email=${encodeURIComponent(email)}`;
-
-      emailHtmlBody += `
-        <br><hr>
-        <div style="margin-top:20px; font-size:12px; color:grey;">
-          <p>
-            From the creator of 
-            <a href="https://coinrule.com" target="_blank" rel="noopener noreferrer">Coinrule</a> & 
-            <a href="https://vwape.com" target="_blank" rel="noopener noreferrer">VWAPE</a>.
-          </p>
-          <p>
-            Want to give a tip? Send ETH or USDC to giberstein.eth on any reasonable EVM chain.
-          </p>
-          <p>
-            Manage your subscriptions on our <a href="${appUrl}" target="_blank" rel="noopener noreferrer">website</a>.
-          </p>
-          <p>
-            To unsubscribe from all notifications, <a href="${unsubscribeLink}">click here</a>.
-          </p>
-        </div>
-      `;
+      const unsubscribeLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/unsubscribe?email=${encodeURIComponent(email)}`;
+      emailHtmlBody += `<br><p style="font-size:12px;color:grey;">To unsubscribe from all notifications, <a href="${unsubscribeLink}">click here</a>.</p>`;
       
       try {
         await sendEmail({ to: email, subject: emailSubject, htmlBody: emailHtmlBody });
@@ -149,7 +132,7 @@ export async function GET() {
       { status: 500 }
     );
   } finally {
-    // The browser is now closed within each fetchRank call, so this is no longer needed.
+    // The browser is no longer used, so this is just for logging.
     console.log('Cron job finishing.');
   }
 } 
