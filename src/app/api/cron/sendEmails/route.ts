@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabase';
-import { fetchFinanceChartRanks } from '../../../../lib/fetchRank';
-import { sendEmail } from '../../../../lib/email';
+import { supabase } from '@/lib/supabase';
+import { fetchFinanceChartRanks } from '@/lib/fetchRank';
+import { sendEmail } from '@/lib/email';
 
 // Helper to map app bundle IDs to their details.
 async function getAppDetails(appId: string): Promise<{ name: string; numericId: string }> {
@@ -28,51 +28,46 @@ export async function GET() {
       return NextResponse.json({ message: 'Failed to fetch chart ranks' }, { status: 500 });
     }
 
-    // 2. Fetch all distinct emails from the database.
-    const { data: distinctEmails, error: subscriptionsError } = await supabase
-      .from('distinct_emails')
-      .select('email');
+    // 2. Fetch all subscriptions from the database in a single query.
+    const { data: allSubscriptions, error: subscriptionsError } = await supabase
+      .from('subscriptions')
+      .select('email, app_id');
 
     if (subscriptionsError) {
-      console.error('Error fetching distinct emails:', subscriptionsError);
+      console.error('Error fetching subscriptions:', subscriptionsError);
       return NextResponse.json(
-        { message: 'Error fetching distinct emails', error: subscriptionsError.message },
+        { message: 'Error fetching subscriptions', error: subscriptionsError.message },
         { status: 500 }
       );
     }
     
-    if (!distinctEmails || distinctEmails.length === 0) {
-      console.log('No subscribed emails found.');
-      return NextResponse.json({ message: 'No subscribed emails found.' }, { status: 200 });
+    if (!allSubscriptions || allSubscriptions.length === 0) {
+      console.log('No subscriptions found in the database.');
+      return NextResponse.json({ message: 'No subscriptions found.' }, { status: 200 });
     }
 
-    console.log(`Found ${distinctEmails.length} distinct email(s) to process.`);
+    // 3. Group subscriptions by email to avoid N+1 queries.
+    const subscriptionsByEmail: { [email: string]: string[] } = {};
+    for (const subscription of allSubscriptions) {
+      if (subscription.email && subscription.app_id) {
+        if (!subscriptionsByEmail[subscription.email]) {
+          subscriptionsByEmail[subscription.email] = [];
+        }
+        subscriptionsByEmail[subscription.email].push(subscription.app_id);
+      }
+    }
 
-    // 3. Process each email.
-    for (const { email } of distinctEmails) {
-      if (!email) continue;
+    console.log(`Found subscriptions for ${Object.keys(subscriptionsByEmail).length} distinct email(s) to process.`);
 
+    // 4. Process each email.
+    for (const email in subscriptionsByEmail) {
       console.log(`Processing email: ${email}`);
-      const { data: userSubscriptions, error: userSubscriptionsError } = await supabase
-        .from('subscriptions')
-        .select('app_id')
-        .eq('email', email);
-
-      if (userSubscriptionsError) {
-        console.error(`Error fetching subscriptions for ${email}:`, userSubscriptionsError);
-        errorsEncountered++;
-        continue; // Skip to the next email
-      }
-
-      if (!userSubscriptions || userSubscriptions.length === 0) {
-        console.log(`No subscriptions found for ${email}, skipping.`);
-        continue;
-      }
+      const userAppIds = subscriptionsByEmail[email];
       
-      const uniqueAppIdsForUser = [...new Set(userSubscriptions.map(sub => sub.app_id))];
+      const uniqueAppIdsForUser = Array.from(new Set(userAppIds));
       const appDetailsForEmail: { name: string; rank: string }[] = [];
 
-      // 4. Look up rank for each unique subscribed app for the current user.
+      // 5. Look up rank for each unique subscribed app for the current user.
       for (const appId of uniqueAppIdsForUser) {
         if (!appId) continue;
         const { name, numericId } = await getAppDetails(appId);
@@ -86,7 +81,7 @@ export async function GET() {
         continue;
       }
       
-      // 5. Compile and send the email.
+      // 6. Compile and send the email.
       let emailSubject = '📈 Your Daily App Rank Update';
       if (appDetailsForEmail.length === 1) {
         const singleApp = appDetailsForEmail[0];

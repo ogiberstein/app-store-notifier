@@ -14,12 +14,14 @@
     "react": "^18",
     "react-dom": "^18",
     "resend": "^3.5.0",
-    "serpapi": "^2.1.0"
+    "serpapi": "^2.1.0",
+    "geist": "^1.3.1"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.19",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8",
