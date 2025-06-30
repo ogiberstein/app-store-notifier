@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.49.8",
     "axios": "^1.9.0",
     "next": "15.3.2",
+    "playwright": "^1.53.1",
     "playwright-extra": "^4.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "react": "^19.0.0",
