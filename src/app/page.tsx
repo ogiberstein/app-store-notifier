@@ -167,6 +167,22 @@ export default function HomePage() {
           </form>
         </div>
       </div>
+
+      <div className="mt-8 text-center text-xs text-gray-500">
+        <p>
+          By the creator of{' '}
+          <a href="https://coinrule.com" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-500">
+            Coinrule
+          </a>{' '}
+          &{' '}
+          <a href="https://vwape.com" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-500">
+            VWAPE
+          </a>
+        </p>
+        <p className="mt-2">
+          Want to give a tip? Send ETH or USDC to giberstein.eth on any reasonable EVM chain
+        </p>
+      </div>
     </div>
   );
 }

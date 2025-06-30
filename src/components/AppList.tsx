@@ -9,7 +9,6 @@ interface AppItem {
 
 // Hardcoded list of popular apps
 const popularApps: AppItem[] = [
-  { id: 'com.binance.dev', name: 'Binance' }, // Placeholder ID
   { id: 'com.coinbase.android', name: 'Coinbase' }, // Placeholder ID, .android is common
   { id: 'app.phantom', name: 'Phantom Wallet' }, // Placeholder ID
   { id: 'co.mona.android', name: 'Crypto.com - Buy Bitcoin, ETH' }, // Placeholder ID for Crypto.com

@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const emailFromAddress = process.env.EMAIL_FROM_ADDRESS;
+const fromEmail = process.env.EMAIL_FROM_ADDRESS;
 
 interface EmailParams {
   to: string;
@@ -26,51 +26,30 @@ export async function sendEmail({
   htmlBody,
 }: EmailParams): Promise<void> {
   if (!process.env.RESEND_API_KEY) {
-    console.error('RESEND_API_KEY not found. Cannot send emails.');
-    // Optionally, throw an error or return early if preferred
-    // For now, we'll log and attempt to proceed, which will likely fail at resend.emails.send()
-    // but this makes the error more explicit if the key is missing.
-    throw new Error('RESEND_API_KEY is not configured.');
+    console.error('RESEND_API_KEY is not set in environment variables.');
+    throw new Error('Server configuration error: RESEND_API_KEY is missing.');
   }
-  if (!emailFromAddress) {
-    console.error('EMAIL_FROM_ADDRESS not found. Cannot send emails.');
-    throw new Error('EMAIL_FROM_ADDRESS is not configured.');
+  if (!fromEmail) {
+    console.error('EMAIL_FROM_ADDRESS is not set in environment variables.');
+    throw new Error('Server configuration error: EMAIL_FROM_ADDRESS is missing.');
   }
 
   try {
-    console.log(`Attempting to send email to: ${to} from: ${emailFromAddress}`);
     const { data, error } = await resend.emails.send({
-      from: emailFromAddress, // Your verified Resend 'From' address
-      to: [to], // Must be an array
+      from: fromEmail,
+      to: [to],
       subject: subject,
       html: htmlBody,
     });
 
     if (error) {
-      console.error(`Error sending email to ${to} via Resend:`, error);
-      // Log the full error object for more details if possible
-      console.error('Resend error details:', JSON.stringify(error, null, 2));
-      throw new Error(`Failed to send email via Resend: ${error.message}`);
+      console.error(`Resend API Error: ${error.message}`, error);
+      throw new Error(`Failed to send email: ${error.message}`);
     }
 
-    console.log(`Email sent successfully to ${to} via Resend. ID: ${data?.id}`);
-  } catch (e: unknown) {
-    let errorMessage = 'An unknown error occurred while sending email';
-    if (e instanceof Error) {
-      errorMessage = e.message;
-    }
-    console.error(`General error when trying to send email to ${to}:`, e);
-
-    // Attempt to log more specific details if available (e.g., from an HTTP error object)
-    if (typeof e === 'object' && e !== null) {
-      if ('response' in e && typeof (e as any).response === 'object' && (e as any).response !== null && 'data' in (e as any).response) {
-        console.error('Catch block error details (response.data):', JSON.stringify((e as any).response.data, null, 2));
-      } else if ('data' in e) {
-        // For errors that might have a 'data' property directly (like ResendError.ValidationErorr)
-         console.error('Catch block error details (data):', JSON.stringify((e as any).data, null, 2));
-      }
-    }
-    // Re-throw a new error with a potentially more specific message
-    throw new Error(`Failed to send email: ${errorMessage}`);
+    console.log(`Email sent successfully to ${to}. ID: ${data?.id}`);
+  } catch (exception) {
+    console.error('An unexpected error occurred while sending email:', exception);
+    throw new Error('An unexpected error occurred while trying to send email.');
   }
 } 
