@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,17 +10,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email, appId, and appName are required' }, { status: 400 });
     }
 
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .insert([{ email, app_id: appId, app_name: appName }])
-      .select(); // Add .select() to get the inserted data back
+    const result = await sql`
+      INSERT INTO subscriptions (email, app_id, app_name)
+      VALUES (${email}, ${appId}, ${appName})
+      ON CONFLICT (email, app_id) DO NOTHING
+      RETURNING *
+    `;
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ message: 'Subscription added successfully', data }, { status: 200 });
+    return NextResponse.json({ message: 'Subscription added successfully', data: result.rows }, { status: 200 });
   } catch (error) {
     console.error('Handler error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';

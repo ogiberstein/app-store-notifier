@@ -12,7 +12,8 @@ const popularApps: AppItem[] = [
   { id: 'com.vilcsak.bitcoin2', name: 'Coinbase' },
   { id: 'co.mona.Monaco', name: 'Crypto.com - Buy Bitcoin, ETH' },
   { id: 'com.kraken.invest.app', name: 'Kraken: Buy Stocks & Crypto' },
-  // { id: 'com.whatsapp', name: 'WhatsApp Messenger' }, // Kept one old one for 5 total if needed, or remove
+  { id: 'com.polymarket.ios-app', name: 'Polymarket' },
+  { id: 'app.phantom', name: 'Phantom Wallet' },
 ];
 
 interface AppListProps {

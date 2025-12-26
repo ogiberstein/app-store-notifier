@@ -4,10 +4,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "App Store Notifier",
-  description: "Get daily email updates for your favorite app store rankings.",
+  description: "Get daily email updates for your favorite crypto app's app-store rankings.",
   openGraph: {
     title: "App Store Notifier",
-    description: "Get daily email updates for your favorite app store rankings.",
+    description: "Get daily email updates for your favorite crypto app's app-store rankings.",
     url: "https://www.appstoreposition.com",
     siteName: "App Store Notifier",
     images: [

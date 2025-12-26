@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { fetchFinanceChartRanks } from '@/lib/fetchRank';
 import { sendEmail } from '@/lib/email';
 
@@ -19,17 +19,10 @@ export async function GET() {
     }
 
     // 2. Fetch all subscriptions from the database in a single query.
-    const { data: allSubscriptions, error: subscriptionsError } = await supabase
-      .from('subscriptions')
-      .select('email, app_id, app_name'); // Also fetch the app_name
-
-    if (subscriptionsError) {
-      console.error('Error fetching subscriptions:', subscriptionsError);
-      return NextResponse.json(
-        { message: 'Error fetching subscriptions', error: subscriptionsError.message },
-        { status: 500 }
-      );
-    }
+    const result = await sql`
+      SELECT email, app_id, app_name FROM subscriptions
+    `;
+    const allSubscriptions = result.rows;
     
     if (!allSubscriptions || allSubscriptions.length === 0) {
       console.log('No subscriptions found in the database.');
@@ -59,7 +52,7 @@ export async function GET() {
       // 5. Look up rank for each unique subscribed app for the current user.
       for (const { appId, appName } of userSubscriptions) {
         const rank = chartRanks.get(appId); // Look up by bundle_id
-        const rankText = rank ? `#${rank}` : 'Not Ranked';
+        const rankText = rank ? `#${rank}` : 'Below #200';
         appDetailsForEmail.push({ name: appName, rank: rankText });
       }
       
