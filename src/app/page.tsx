@@ -34,38 +34,31 @@ export default function HomePage() {
     }
 
     setIsSubscribing(true);
-    let successCount = 0;
-    const totalApps = selectedApps.length;
-
-    for (const app of selectedApps) {
-      try {
-        const response = await fetch('/api/subscriptions/add', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, appId: app.id, appName: app.name }),
-        });
-        const result = await response.json();
-        if (response.ok) {
-          console.log(`Successfully subscribed to ${app.name} for ${email}:`, result.message);
-          successCount++;
-        } else {
-          console.error(`Failed to subscribe to ${app.name} for ${email}:`, result.error);
-        }
-      } catch (error) {
-        console.error(`Error subscribing to ${app.name} for ${email}:`, error);
+    
+    try {
+      const response = await fetch('/api/subscriptions/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email, 
+          apps: selectedApps.map(app => ({ appId: app.id, appName: app.name }))
+        }),
+      });
+      const result = await response.json();
+      
+      if (response.ok) {
+        setSubmitMessage('Successfully subscribed! Check your email for confirmation.');
+      } else {
+        setSubmitMessage(result.error || 'Failed to subscribe. Please try again.');
       }
+    } catch (error) {
+      console.error('Error subscribing:', error);
+      setSubmitMessage('An error occurred. Please try again.');
     }
-
+    
     setIsSubscribing(false);
-    if (successCount === totalApps) {
-      setSubmitMessage('Successfully subscribed to all selected apps!');
-    } else if (successCount > 0) {
-      setSubmitMessage(`Partially subscribed. ${successCount} of ${totalApps} apps were successful. Check console for errors.`);
-    } else {
-      setSubmitMessage('Failed to subscribe to any apps. Please check the console for errors and try again.');
-    }
   };
 
   const handleUnsubscribe = async () => {
@@ -175,8 +168,8 @@ export default function HomePage() {
             Coinrule
           </a>{' '}
           &{' '}
-          <a href="https://vwape.com" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-500">
-            VWAPE
+          <a href="https://limits.trade" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-500">
+            Limits
           </a>
         </p>
         <p className="mt-2">

@@ -2,23 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
 
+interface AppToSubscribe {
+  appId: string;
+  appName: string;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, appId, appName } = body;
+    const { email, apps } = body as { email: string; apps: AppToSubscribe[] };
 
-    if (!email || !appId || !appName) {
-      return NextResponse.json({ error: 'Email, appId, and appName are required' }, { status: 400 });
+    if (!email || !apps || apps.length === 0) {
+      return NextResponse.json({ error: 'Email and at least one app are required' }, { status: 400 });
     }
 
-    const result = await sql`
-      INSERT INTO subscriptions (email, app_id, app_name)
-      VALUES (${email}, ${appId}, ${appName})
-      ON CONFLICT (email, app_id) DO NOTHING
-      RETURNING *
-    `;
+    // Insert all subscriptions
+    let successCount = 0;
+    for (const app of apps) {
+      try {
+        await sql`
+          INSERT INTO subscriptions (email, app_id, app_name)
+          VALUES (${email}, ${app.appId}, ${app.appName})
+          ON CONFLICT (email, app_id) DO NOTHING
+        `;
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to insert subscription for ${app.appName}:`, err);
+      }
+    }
 
-    // Send confirmation email with all subscribed apps
+    // Get all subscriptions for this user to include in confirmation email
     const allSubscriptions = await sql`
       SELECT app_name FROM subscriptions WHERE email = ${email}
     `;
@@ -45,10 +58,14 @@ export async function POST(req: NextRequest) {
       // Don't fail the subscription if email fails
     }
 
-    return NextResponse.json({ message: 'Subscription added successfully', data: result.rows }, { status: 200 });
+    return NextResponse.json({ 
+      message: `Successfully subscribed to ${successCount} app(s)`, 
+      successCount 
+    }, { status: 200 });
   } catch (error) {
     console.error('Handler error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+
