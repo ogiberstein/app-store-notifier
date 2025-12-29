@@ -6,28 +6,32 @@ import { sendEmail } from '@/lib/email';
 export const dynamic = 'force-dynamic'; // Prevent caching
 
 // Helper function to format position change
-function formatPositionChange(todayRank: number | null, yesterdayRank: number | null): string {
+function formatPositionChange(
+  todayRank: number | null, 
+  compareRank: number | null, 
+  label: string
+): string {
   // If not ranked today, no change to show
   if (todayRank === null) {
     return '';
   }
   
-  // If wasn't ranked yesterday but ranked today = NEW
-  if (yesterdayRank === null) {
-    return ' <span style="color: #22c55e; font-weight: bold;">(NEW)</span>';
+  // If wasn't ranked in comparison period but ranked today = NEW
+  if (compareRank === null) {
+    return ` <span style="color: #22c55e; font-weight: bold;">(NEW ${label})</span>`;
   }
   
   // Calculate the change (lower rank number = better position)
-  const change = yesterdayRank - todayRank;
+  const change = compareRank - todayRank;
   
   if (change === 0) {
-    return ' <span style="color: #6b7280;">(—)</span>';
+    return ` <span style="color: #6b7280;">(— ${label})</span>`;
   } else if (change > 0) {
     // Moved up (e.g., from #50 to #40 = +10 positions)
-    return ` <span style="color: #22c55e; font-weight: bold;">(↑${change})</span>`;
+    return ` <span style="color: #22c55e; font-weight: bold;">(↑${change} ${label})</span>`;
   } else {
     // Moved down (e.g., from #40 to #50 = -10 positions)
-    return ` <span style="color: #ef4444; font-weight: bold;">(↓${Math.abs(change)})</span>`;
+    return ` <span style="color: #ef4444; font-weight: bold;">(↓${Math.abs(change)} ${label})</span>`;
   }
 }
 
@@ -44,7 +48,7 @@ export async function GET() {
       return NextResponse.json({ message: 'Failed to fetch chart ranks' }, { status: 500 });
     }
 
-    // 2. Fetch yesterday's rankings for comparison
+    // 2. Fetch yesterday's rankings for daily comparison
     const yesterdayResult = await sql`
       SELECT app_id, rank FROM ranking_history 
       WHERE recorded_date = CURRENT_DATE - INTERVAL '1 day'
@@ -55,7 +59,20 @@ export async function GET() {
         yesterdayRanks.set(row.app_id, row.rank);
       }
     }
-    console.log(`Loaded ${yesterdayRanks.size} rankings from yesterday for comparison.`);
+    console.log(`Loaded ${yesterdayRanks.size} rankings from yesterday for daily comparison.`);
+
+    // 2b. Fetch last week's rankings for weekly comparison
+    const lastWeekResult = await sql`
+      SELECT app_id, rank FROM ranking_history 
+      WHERE recorded_date = CURRENT_DATE - INTERVAL '7 days'
+    `;
+    const lastWeekRanks = new Map<string, number>();
+    for (const row of lastWeekResult.rows) {
+      if (row.app_id && row.rank) {
+        lastWeekRanks.set(row.app_id, row.rank);
+      }
+    }
+    console.log(`Loaded ${lastWeekRanks.size} rankings from last week for weekly comparison.`);
 
     // 3. Save today's rankings for tomorrow's comparison
     // Get all unique app_ids from subscriptions to know which apps to save
@@ -105,18 +122,20 @@ export async function GET() {
       console.log(`Processing email: ${email}`);
       const userSubscriptions = subscriptionsByEmail[email];
       
-      const appDetailsForEmail: { name: string; rank: string; change: string }[] = [];
+      const appDetailsForEmail: { name: string; rank: string; dailyChange: string; weeklyChange: string }[] = [];
 
       // 7. Look up rank for each unique subscribed app for the current user.
       for (const { appId, appName } of userSubscriptions) {
         const todayRank = chartRanks.get(appId) || null;
         const yesterdayRank = yesterdayRanks.get(appId) || null;
+        const lastWeekRank = lastWeekRanks.get(appId) || null;
         
         const rankText = todayRank ? `#${todayRank}` : 'Below #200';
-        // Only show position change if currently ranked
-        const changeText = todayRank ? formatPositionChange(todayRank, yesterdayRank) : '';
+        // Only show position changes if currently ranked
+        const dailyChangeText = todayRank ? formatPositionChange(todayRank, yesterdayRank, 'Daily') : '';
+        const weeklyChangeText = todayRank ? formatPositionChange(todayRank, lastWeekRank, 'Weekly') : '';
         
-        appDetailsForEmail.push({ name: appName, rank: rankText, change: changeText });
+        appDetailsForEmail.push({ name: appName, rank: rankText, dailyChange: dailyChangeText, weeklyChange: weeklyChangeText });
       }
       
       if (appDetailsForEmail.length === 0) {
@@ -133,7 +152,7 @@ export async function GET() {
 
       let emailHtmlBody = '<h1>Your Daily App Rank Update</h1><ul style="list-style: none; padding: 0;">';
       appDetailsForEmail.forEach(app => {
-        emailHtmlBody += `<li style="margin: 10px 0; font-size: 16px;"><b>${app.name}:</b> ${app.rank} in Finance (US)${app.change}</li>`;
+        emailHtmlBody += `<li style="margin: 10px 0; font-size: 16px;"><b>${app.name}:</b> ${app.rank} in Finance (US)${app.dailyChange}${app.weeklyChange}</li>`;
       });
       emailHtmlBody += '</ul>';
 
