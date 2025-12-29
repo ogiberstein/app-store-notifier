@@ -157,7 +157,8 @@ export async function GET() {
       emailHtmlBody += '</ul>';
 
       const unsubscribeLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://appstoreposition.com'}/unsubscribe?email=${encodeURIComponent(email)}`;
-      emailHtmlBody += `<br><p style="font-size:12px;color:grey;">To unsubscribe from all notifications, <a href="${unsubscribeLink}">click here</a>.</p>`;
+      emailHtmlBody += `<br><p style="font-size:12px;color:grey;">Want to track a different app? <a href="https://forms.gle/1tsh2DwPZP261ZQs8">Request it here</a>.</p>`;
+      emailHtmlBody += `<p style="font-size:12px;color:grey;">To unsubscribe from all notifications, <a href="${unsubscribeLink}">click here</a>.</p>`;
       
       try {
         await sendEmail({ to: email, subject: emailSubject, htmlBody: emailHtmlBody });

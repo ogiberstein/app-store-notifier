@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
         <p>• ${appList}</p>
         <br>
         <p style="font-size:12px;color:grey;">Changed your mind? Visit <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://appstoreposition.com'}">appstoreposition.com</a> to subscribe again.</p>
+        <p style="font-size:12px;color:grey;">Want to track a different app? <a href="https://forms.gle/1tsh2DwPZP261ZQs8">Request it here</a>.</p>
       `;
 
       try {

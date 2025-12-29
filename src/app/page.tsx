@@ -157,6 +157,18 @@ export default function HomePage() {
                 {isUnsubscribing ? 'Unsubscribing...' : 'Unsubscribe from All'}
               </button>
             </div>
+            
+            <p className="mt-4 text-center text-sm text-gray-500">
+              Want to track a different app?{' '}
+              <a 
+                href="https://forms.gle/1tsh2DwPZP261ZQs8" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Request it here
+              </a>
+            </p>
           </form>
         </div>
       </div>
