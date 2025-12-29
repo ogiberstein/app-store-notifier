@@ -17,5 +17,15 @@ export async function initializeDatabase() {
       UNIQUE(email, app_id)
     )
   `;
+  
+  await sql`
+    CREATE TABLE IF NOT EXISTS ranking_history (
+      id SERIAL PRIMARY KEY,
+      app_id VARCHAR(255) NOT NULL,
+      rank INTEGER,
+      recorded_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      UNIQUE(app_id, recorded_date)
+    )
+  `;
 }
 
