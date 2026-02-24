@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
+import { unstable_noStore as noStore } from 'next/cache';
 import { sql } from '@/lib/db';
 import { fetchFinanceChartRanks } from '@/lib/fetchRank';
 import { sendEmail } from '@/lib/email';
 
-export const dynamic = 'force-dynamic'; // Prevent caching
+export const dynamic = 'force-dynamic';
 
 // Helper function to format position change
 function formatPositionChange(
@@ -36,6 +37,7 @@ function formatPositionChange(
 }
 
 export async function GET() {
+  noStore();
   console.log('Cron job sendEmails started...');
   console.log(`POSTGRES_HOST: ${process.env.POSTGRES_HOST}`);
   let emailsSentCount = 0;
