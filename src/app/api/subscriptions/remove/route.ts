@@ -10,9 +10,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email and appId are required' }, { status: 400 });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     await sql`
       DELETE FROM subscriptions
-      WHERE email = ${email} AND app_id = ${appId}
+      WHERE email = ${normalizedEmail} AND app_id = ${appId}
     `;
 
     return NextResponse.json({ message: 'Subscription removed successfully' }, { status: 200 });

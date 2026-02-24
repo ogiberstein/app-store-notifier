@@ -37,10 +37,15 @@ function formatPositionChange(
 
 export async function GET() {
   console.log('Cron job sendEmails started...');
+  console.log(`POSTGRES_HOST: ${process.env.POSTGRES_HOST}`);
   let emailsSentCount = 0;
   let errorsEncountered = 0;
 
   try {
+    // Diagnostic: log all subscriptions the DB returns
+    const diagResult = await sql`SELECT id, email, app_id FROM subscriptions`;
+    console.log(`DIAGNOSTIC - subscriptions table has ${diagResult.rows.length} rows: ${JSON.stringify(diagResult.rows)}`);
+
     // 1. Fetch all app ranks for the Finance category once.
     const chartRanks = await fetchFinanceChartRanks();
     if (chartRanks.size === 0) {

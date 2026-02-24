@@ -11,21 +11,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Get the list of apps before deleting
     const subscriptions = await sql`
-      SELECT app_name FROM subscriptions WHERE email = ${email}
+      SELECT app_name FROM subscriptions WHERE email = ${normalizedEmail}
     `;
     
     const appNames = subscriptions.rows.map(row => row.app_name);
 
+    if (appNames.length === 0) {
+      return NextResponse.json({ message: 'No active subscriptions found for this email.' }, { status: 200 });
+    }
+
     // Delete all subscriptions
     await sql`
       DELETE FROM subscriptions
-      WHERE email = ${email}
+      WHERE email = ${normalizedEmail}
     `;
 
-    // Send confirmation email if there were subscriptions to remove
-    if (appNames.length > 0) {
+    // Send confirmation email
+    {
       const appList = appNames.join('<br>• ');
       
       const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://appstoreposition.com';
@@ -44,7 +50,7 @@ export async function POST(req: NextRequest) {
 
       try {
         await sendEmail({
-          to: email,
+          to: normalizedEmail,
           subject: '👋 App Store Notifier - Unsubscribed',
           htmlBody,
         });

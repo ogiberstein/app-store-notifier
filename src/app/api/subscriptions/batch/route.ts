@@ -16,13 +16,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email and at least one app are required' }, { status: 400 });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Insert all subscriptions
     let successCount = 0;
     for (const app of apps) {
       try {
         await sql`
           INSERT INTO subscriptions (email, app_id, app_name)
-          VALUES (${email}, ${app.appId}, ${app.appName})
+          VALUES (${normalizedEmail}, ${app.appId}, ${app.appName})
           ON CONFLICT (email, app_id) DO NOTHING
         `;
         successCount++;
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     // Get all subscriptions for this user to include in confirmation email
     const allSubscriptions = await sql`
-      SELECT app_name FROM subscriptions WHERE email = ${email}
+      SELECT app_name FROM subscriptions WHERE email = ${normalizedEmail}
     `;
     
     const appList = allSubscriptions.rows.map(row => row.app_name).join('<br>• ');
@@ -56,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     try {
       await sendEmail({
-        to: email,
+        to: normalizedEmail,
         subject: '✅ App Store Notifier - Subscription Confirmed',
         htmlBody,
       });

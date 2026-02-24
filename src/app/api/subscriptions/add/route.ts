@@ -11,16 +11,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email, appId, and appName are required' }, { status: 400 });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     const result = await sql`
       INSERT INTO subscriptions (email, app_id, app_name)
-      VALUES (${email}, ${appId}, ${appName})
+      VALUES (${normalizedEmail}, ${appId}, ${appName})
       ON CONFLICT (email, app_id) DO NOTHING
       RETURNING *
     `;
 
     // Send confirmation email with all subscribed apps
     const allSubscriptions = await sql`
-      SELECT app_name FROM subscriptions WHERE email = ${email}
+      SELECT app_name FROM subscriptions WHERE email = ${normalizedEmail}
     `;
     
     const appList = allSubscriptions.rows.map(row => row.app_name).join('<br>• ');
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     try {
       await sendEmail({
-        to: email,
+        to: normalizedEmail,
         subject: '✅ App Store Notifier - Subscription Confirmed',
         htmlBody,
       });

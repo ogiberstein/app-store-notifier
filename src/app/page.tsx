@@ -42,7 +42,7 @@ export default function HomePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          email, 
+          email: email.toLowerCase().trim(), 
           apps: selectedApps.map(app => ({ appId: app.id, appName: app.name }))
         }),
       });
@@ -76,7 +76,7 @@ export default function HomePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
       });
       const result = await response.json();
       if (response.ok) {
