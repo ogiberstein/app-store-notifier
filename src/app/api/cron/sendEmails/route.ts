@@ -39,15 +39,10 @@ function formatPositionChange(
 export async function GET() {
   noStore();
   console.log('Cron job sendEmails started...');
-  console.log(`POSTGRES_HOST: ${process.env.POSTGRES_HOST}`);
   let emailsSentCount = 0;
   let errorsEncountered = 0;
 
   try {
-    // Diagnostic: log all subscriptions the DB returns
-    const diagResult = await sql`SELECT id, email, app_id FROM subscriptions`;
-    console.log(`DIAGNOSTIC - subscriptions table has ${diagResult.rows.length} rows: ${JSON.stringify(diagResult.rows)}`);
-
     // 1. Fetch all app ranks for the Finance category once.
     const chartRanks = await fetchFinanceChartRanks();
     if (chartRanks.size === 0) {
@@ -105,7 +100,6 @@ export async function GET() {
       SELECT email, app_id, app_name FROM subscriptions
     `;
     const allSubscriptions = result.rows;
-    console.log(`DIAGNOSTIC 2 - main query returned ${allSubscriptions.length} rows: ${JSON.stringify(allSubscriptions)}`);
     
     if (!allSubscriptions || allSubscriptions.length === 0) {
       console.log('No subscriptions found in the database.');
@@ -123,7 +117,6 @@ export async function GET() {
       }
     }
 
-    console.log(`DIAGNOSTIC 3 - grouped emails: ${JSON.stringify(Object.keys(subscriptionsByEmail))}`);
     console.log(`Found subscriptions for ${Object.keys(subscriptionsByEmail).length} distinct email(s) to process.`);
 
     // 6. Process each email.
