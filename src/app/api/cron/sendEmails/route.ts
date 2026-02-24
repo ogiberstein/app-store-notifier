@@ -103,6 +103,7 @@ export async function GET() {
       SELECT email, app_id, app_name FROM subscriptions
     `;
     const allSubscriptions = result.rows;
+    console.log(`DIAGNOSTIC 2 - main query returned ${allSubscriptions.length} rows: ${JSON.stringify(allSubscriptions)}`);
     
     if (!allSubscriptions || allSubscriptions.length === 0) {
       console.log('No subscriptions found in the database.');
@@ -120,6 +121,7 @@ export async function GET() {
       }
     }
 
+    console.log(`DIAGNOSTIC 3 - grouped emails: ${JSON.stringify(Object.keys(subscriptionsByEmail))}`);
     console.log(`Found subscriptions for ${Object.keys(subscriptionsByEmail).length} distinct email(s) to process.`);
 
     // 6. Process each email.
